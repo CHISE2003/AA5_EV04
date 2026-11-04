@@ -1,0 +1,1533 @@
+{
+  "info": {
+    "name": "API TechFix - Testing AA5-EV04",
+    "description": "Pruebas de autenticación, clientes, equipos y órdenes de servicio. Ejecutar con Collection Runner en orden.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 - Estado del servicio",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Datos únicos por ejecución para poder repetir las pruebas",
+              "pm.collectionVariables.set('usuario', 'tecnico_' + Date.now());",
+              "pm.collectionVariables.set('documento', String(Date.now()));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().estado).to.eql('activo'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": []
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "02 - Registro exitoso",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 201', () => pm.response.to.have.status(201));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Usuario registrado correctamente\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/registro",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "registro"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuario\": \"{{usuario}}\",\n  \"contrasena\": \"Clave123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "03 - Registro con usuario duplicado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 409', () => pm.response.to.have.status(409));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"El usuario ya existe\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/registro",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "registro"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuario\": \"{{usuario}}\",\n  \"contrasena\": \"Clave123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "04 - Registro con contraseña corta",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 400', () => pm.response.to.have.status(400));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"La contraseña debe tener al menos 6 caracteres\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/registro",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "registro"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuario\": \"otro\",\n  \"contrasena\": \"123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "05 - Login exitoso (guarda el token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Autenticación satisfactoria\"));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().token).to.be.a('string'); });",
+              "pm.collectionVariables.set('token', pm.response.json().token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuario\": \"{{usuario}}\",\n  \"contrasena\": \"Clave123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "06 - Login con contraseña incorrecta",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 401', () => pm.response.to.have.status(401));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Error en la autenticación\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuario\": \"{{usuario}}\",\n  \"contrasena\": \"incorrecta\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "07 - Login con usuario inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 401', () => pm.response.to.have.status(401));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Error en la autenticación\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuario\": \"no_existe\",\n  \"contrasena\": \"Clave123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "08 - Clientes sin token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 401', () => pm.response.to.have.status(401));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Token no enviado, inválido o vencido\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/clientes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes"
+          ]
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "09 - Crear cliente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 201', () => pm.response.to.have.status(201));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().nombre).to.eql('Ana Gómez'); });",
+              "pm.collectionVariables.set('clienteId', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/clientes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Ana Gómez\",\n  \"documento\": \"{{documento}}\",\n  \"telefono\": \"3001112233\",\n  \"email\": \"ana@mail.com\",\n  \"direccion\": \"Cra 10 # 5-20\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "10 - Crear cliente con documento repetido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 409', () => pm.response.to.have.status(409));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Ya existe un cliente con ese documento\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/clientes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Otra\",\n  \"documento\": \"{{documento}}\",\n  \"telefono\": \"3000000000\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "11 - Crear cliente sin campos obligatorios",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 400', () => pm.response.to.have.status(400));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"El campo documento es obligatorio\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/clientes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Solo nombre\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "12 - Crear cliente con email inválido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 400', () => pm.response.to.have.status(400));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"El email no es válido\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/clientes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"X\",\n  \"documento\": \"9999\",\n  \"telefono\": \"3\",\n  \"email\": \"correo-malo\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "13 - Listar clientes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json()).to.be.an('array').that.is.not.empty; });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/clientes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes"
+          ]
+        }
+      }
+    },
+    {
+      "name": "14 - Buscar clientes por nombre",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().length).to.be.at.least(1); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/clientes?buscar=ana",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes"
+          ],
+          "query": [
+            {
+              "key": "buscar",
+              "value": "ana"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "15 - Obtener cliente por id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('clienteId'))); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/clientes/{{clienteId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes",
+            "{{clienteId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "16 - Obtener cliente inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 404', () => pm.response.to.have.status(404));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Cliente no encontrado\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/clientes/999999",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes",
+            "999999"
+          ]
+        }
+      }
+    },
+    {
+      "name": "17 - Actualizar cliente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().telefono).to.eql('3009998877'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/clientes/{{clienteId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes",
+            "{{clienteId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"telefono\": \"3009998877\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "18 - Crear equipo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 201', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('equipoId', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/equipos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "equipos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"tipo\": \"celular\",\n  \"marca\": \"Samsung\",\n  \"modelo\": \"A15\",\n  \"serial\": \"SN123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "19 - Crear equipo con cliente inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 400', () => pm.response.to.have.status(400));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"El cliente indicado no existe\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/equipos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "equipos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": 999999,\n  \"tipo\": \"celular\",\n  \"marca\": \"X\",\n  \"modelo\": \"Y\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "20 - Crear equipo con tipo inválido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 400', () => pm.response.to.have.status(400));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().mensaje).to.include('El tipo debe ser'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/equipos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "equipos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"tipo\": \"nave\",\n  \"marca\": \"X\",\n  \"modelo\": \"Y\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "21 - Listar equipos por cliente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().length).to.be.at.least(1); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/equipos?clienteId={{clienteId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "equipos"
+          ],
+          "query": [
+            {
+              "key": "clienteId",
+              "value": "{{clienteId}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "22 - Obtener equipo por id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().marca).to.eql('Samsung'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/equipos/{{equipoId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "equipos",
+            "{{equipoId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "23 - Actualizar equipo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().modelo).to.eql('A15 5G'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/equipos/{{equipoId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "equipos",
+            "{{equipoId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"modelo\": \"A15 5G\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "24 - Crear orden de servicio",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 201', () => pm.response.to.have.status(201));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().estado).to.eql('RECIBIDO'); });",
+              "pm.collectionVariables.set('ordenId', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"equipoId\": {{equipoId}},\n  \"descripcionFalla\": \"Pantalla rota\",\n  \"costo\": 150000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "25 - Crear orden sin descripción de falla",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 400', () => pm.response.to.have.status(400));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"El campo descripcionFalla es obligatorio\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"equipoId\": {{equipoId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "26 - Listar órdenes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().length).to.be.at.least(1); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes"
+          ]
+        }
+      }
+    },
+    {
+      "name": "27 - Obtener orden por id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().descripcionFalla).to.eql('Pantalla rota'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes/{{ordenId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes",
+            "{{ordenId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "28 - Actualizar orden (diagnóstico y costo)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().costo).to.eql(180000); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes/{{ordenId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes",
+            "{{ordenId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"diagnostico\": \"Cambio de display\",\n  \"costo\": 180000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "29 - Cambiar estado a EN_REPARACION",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().estado).to.eql('EN_REPARACION'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes/{{ordenId}}/estado",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes",
+            "{{ordenId}}",
+            "estado"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"EN_REPARACION\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "30 - Cambiar estado con valor inválido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 400', () => pm.response.to.have.status(400));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().mensaje).to.include('El estado debe ser'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes/{{ordenId}}/estado",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes",
+            "{{ordenId}}",
+            "estado"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"INVENTADO\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "31 - Filtrar órdenes por estado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().length).to.be.at.least(1); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes?estado=EN_REPARACION",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes"
+          ],
+          "query": [
+            {
+              "key": "estado",
+              "value": "EN_REPARACION"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "32 - Eliminar cliente con equipos (regla de negocio)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 409', () => pm.response.to.have.status(409));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"No se puede eliminar: el cliente tiene equipos registrados\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/clientes/{{clienteId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes",
+            "{{clienteId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "33 - Eliminar equipo con órdenes (regla de negocio)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 409', () => pm.response.to.have.status(409));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"No se puede eliminar: el equipo tiene órdenes de servicio\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/equipos/{{equipoId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "equipos",
+            "{{equipoId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "34 - Cambiar estado a ENTREGADO",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Contenido de la respuesta', () => { pm.expect(pm.response.json().estado).to.eql('ENTREGADO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes/{{ordenId}}/estado",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes",
+            "{{ordenId}}",
+            "estado"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"ENTREGADO\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "35 - Modificar una orden ya entregada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 409', () => pm.response.to.have.status(409));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"La orden ya fue entregada y no se puede modificar\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes/{{ordenId}}/estado",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes",
+            "{{ordenId}}",
+            "estado"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"LISTO\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "36 - Eliminar orden",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Orden eliminado correctamente\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ordenes/{{ordenId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ordenes",
+            "{{ordenId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "37 - Eliminar equipo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Equipo eliminado correctamente\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/equipos/{{equipoId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "equipos",
+            "{{equipoId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "38 - Eliminar cliente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Código de estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Mensaje correcto', () => pm.expect(pm.response.json().mensaje).to.eql(\"Cliente eliminado correctamente\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/clientes/{{clienteId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "clientes",
+            "{{clienteId}}"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "usuario",
+      "value": ""
+    },
+    {
+      "key": "documento",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "clienteId",
+      "value": ""
+    },
+    {
+      "key": "equipoId",
+      "value": ""
+    },
+    {
+      "key": "ordenId",
+      "value": ""
+    }
+  ]
+}
